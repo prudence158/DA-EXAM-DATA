@@ -1,5 +1,5 @@
 ---
-title: "ALAT for Business Onboarding Analytics: Identifying and Engaging Non-Enrolled Corporate Customers in the Apapa Zone"
+title: "Digital Banking for Business Onboarding Analytics: Identifying and Engaging Non-Enrolled Corporate Customers in the Apapa Zone"
 author: "Prudence Mordi"
 date: today
 format:
@@ -21,9 +21,9 @@ execute:
 
 # Executive Summary
 
-This analysis examines **103 corporate current account records** in the Apapa zone to generate a detailed breakdown of customers not currently enrolled in **ALAT for Business (AFB)** and to identify which account segments should be prioritised for onboarding engagement.
+This analysis examines **103 corporate current account records** in the Apapa zone to generate a detailed breakdown of customers not currently enrolled in **Digital Banking for Business (AFB)** and to identify which account segments should be prioritised for onboarding engagement.
 
-Using five foundational analytical techniques — exploratory data analysis, data visualisation, hypothesis testing, correlation analysis, and logistic regression — this study builds a data-driven onboarding pipeline that answers two operational questions: *Who is not on ALAT for Business?* and *What predicts non-enrollment, so we can target outreach efficiently?*
+Using five foundational analytical techniques — exploratory data analysis, data visualisation, hypothesis testing, correlation analysis, and logistic regression — this study builds a data-driven onboarding pipeline that answers two operational questions: *Who is not on Digital Banking for Business?* and *What predicts non-enrollment, so we can target outreach efficiently?*
 
 Key findings:
 
@@ -31,7 +31,7 @@ Key findings:
 - **Account age alone does not predict enrollment status**, meaning the onboarding gap is not simply a legacy-account problem — it spans new and old accounts alike.
 - **Logistic regression generates individual account risk scores**, enabling Relationship Managers to rank accounts by non-enrollment probability and sequence outreach by commercial priority.
 
-**Strategic Recommendation:** Launch a structured **AFB Onboarding Drive** targeting non-individual accounts and accounts managed by officers with the lowest current AFB conversion rates. A conservative 50% conversion of the top-priority segment would meaningfully expand the zone's ALAT for Business base and unlock digital transaction revenue.
+**Strategic Recommendation:** Launch a structured **AFB Onboarding Drive** targeting non-individual accounts and accounts managed by officers with the lowest current AFB conversion rates. A conservative 50% conversion of the top-priority segment would meaningfully expand the zone's Digital Banking for Business base and unlock digital transaction revenue.
 
 **For Defence:** Be prepared to explain data collection methodology (CRM system extraction, systematic sampling, n=103), justify each technique against the onboarding business problem, and interpret logistic regression coefficients as operational prioritisation tools — not just statistical outputs.
 
@@ -55,13 +55,13 @@ Key findings:
 
 As Zonal Manager with accountability for product penetration and digital adoption across the zone, my key performance obligations include:
 
-- **Product Penetration Monitoring:** Tracking what percentage of eligible corporate accounts are enrolled in ALAT for Business — the bank's flagship digital business banking platform
+- **Product Penetration Monitoring:** Tracking what percentage of eligible corporate accounts are enrolled in Digital Banking for Business — the bank's flagship digital business banking platform
 - **Onboarding Pipeline Management:** Identifying non-enrolled accounts and sequencing relationship manager outreach by commercial priority
 - **Officer Accountability:** Monitoring which account officers have the lowest AFB conversion rates and designing targeted coaching or reallocation
-- **Revenue Activation:** ALAT for Business generates transaction fee income, digital float, and cross-sell opportunity — non-enrollment represents a direct, measurable revenue gap
+- **Revenue Activation:** Digital Banking for Business generates transaction fee income, digital float, and cross-sell opportunity — non-enrollment represents a direct, measurable revenue gap
 - **Zone Performance Reporting:** Presenting AFB enrollment targets and progress to the Commercial Banking Head and Board
 
-This capstone directly addresses the operational gap: **Which customers are not on ALAT for Business, and how do we build the most efficient onboarding engagement list?**
+This capstone directly addresses the operational gap: **Which customers are not on Digital Banking for Business, and how do we build the most efficient onboarding engagement list?**
 
 ## 1.3 Five Techniques — Business Relevance & Operational Mapping
 
@@ -80,7 +80,7 @@ AFB enrollment baseline → Identifies the size and composition of the non-enrol
 ### **Technique 2: Data Visualisation & Storytelling**
 
 **Business Application:**
-The Commercial Banking Head and product team are results-oriented. A single bar chart showing "65% of non-individual accounts are not on ALAT for Business vs. 40% of corporate accounts" communicates the onboarding opportunity faster than any table. Visualisations also serve as the primary communication tool in RM briefings — account officers need to see their own AFB conversion rates relative to peers to internalise accountability.
+The Commercial Banking Head and product team are results-oriented. A single bar chart showing "65% of non-individual accounts are not on Digital Banking for Business vs. 40% of corporate accounts" communicates the onboarding opportunity faster than any table. Visualisations also serve as the primary communication tool in RM briefings — account officers need to see their own AFB conversion rates relative to peers to internalise accountability.
 
 **Operational Decision:**
 Monthly AFB dashboard → Communicates enrollment gaps to executive team and RMs → Triggers branch-level onboarding targets → Drives weekly officer accountability reviews
@@ -130,7 +130,7 @@ Fitted logistic model → Applied to all 120 accounts in the zone → Generates 
 
 | Phase | Technique | Question | Output | Business Action |
 |-------|-----------|----------|--------|-----------------|
-| **Understanding** | EDA | Who is not on ALAT for Business? | Enrollment rates, distributions | Set onboarding targets |
+| **Understanding** | EDA | Who is not on Digital Banking for Business? | Enrollment rates, distributions | Set onboarding targets |
 | **Communication** | Visualisation | How do I show the gap to leadership and RMs? | Charts, dashboards | RM accountability briefings |
 | **Validation** | Hypothesis Testing | Are enrollment gaps statistically real? | p-values, effect sizes | Confirm which segments to target |
 | **Identification** | Correlation | Which account attributes predict non-enrollment? | Correlation matrix | Select features for model |
@@ -223,7 +223,7 @@ ORDER BY AccountNumber
 | **Data Extraction Date** | 30 April 2026 |
 | **Analysis Date** | 20 May 2026 |
 | **Account Age Calculation** | Current date minus Open Date (in years) |
-| **AFB Enrollment Definition** | `On AFB = "Yes"` in the CRM — account has been onboarded to ALAT for Business |
+| **AFB Enrollment Definition** | `On AFB = "Yes"` in the CRM — account has been onboarded to Digital Banking for Business |
 | **Non-Enrollment Definition** | `On AFB = "No"` — eligible account not yet activated on the platform |
 
 ---
@@ -244,7 +244,7 @@ ORDER BY AccountNumber
 
 **What CAN be published:**
 
-- Anonymised summary statistics (e.g., "X% of accounts are not on ALAT for Business")
+- Anonymised summary statistics (e.g., "X% of accounts are not on Digital Banking for Business")
 - Model coefficients and performance metrics
 - Aggregate charts and visualisations
 - Technique code and methodology
@@ -276,10 +276,10 @@ ORDER BY AccountNumber
 | **Account Officer** | Categorical | Relationship manager name | String | 11 (10.7%) |
 | **Account Status** | Categorical | Account operational state (used as control variable) | Active / Dormant / Inactive | 1 (0.97%) |
 | **Currency Code** | Categorical | Currency denomination | NGN (all records) | 0 |
-| **On AFB** | Categorical | **Primary outcome: ALAT for Business enrollment** | Yes / No | 0 |
+| **On AFB** | Categorical | **Primary outcome: Digital Banking for Business enrollment** | Yes / No | 0 |
 | **Open Date** | Date | Account opening date | DD/MM/YYYY | 0 |
 
-> **Key variable:** `On AFB` is the primary outcome variable for this analysis. `Yes` = enrolled in ALAT for Business; `No` = not enrolled and eligible for onboarding.
+> **Key variable:** `On AFB` is the primary outcome variable for this analysis. `Yes` = enrolled in Digital Banking for Business; `No` = not enrolled and eligible for onboarding.
 
 ---
 
@@ -365,7 +365,7 @@ cat("\n=== ON AFB ENROLLMENT DISTRIBUTION ===\n")
 afb_dist <- df %>%
   group_by(`On.AFB`) %>%
   summarise(Count = n(), Percentage = round(n()/nrow(df)*100, 1), .groups='drop')
-kable(afb_dist, caption="ALAT for Business Enrollment Status") %>%
+kable(afb_dist, caption="Digital Banking for Business Enrollment Status") %>%
   kable_styling(bootstrap_options=c("striped", "hover"))
 ```
 
@@ -434,7 +434,7 @@ afb_dist <- df %>%
     .groups='drop'
   ) %>% arrange(desc(Count))
 
-kable(afb_dist, caption="ALAT for Business Enrollment Status") %>%
+kable(afb_dist, caption="Digital Banking for Business Enrollment Status") %>%
   kable_styling(bootstrap_options=c("striped", "hover"))
 
 # Classify
@@ -447,7 +447,7 @@ barplot(table(df$AFBStatus),
         main="AFB Enrollment Distribution",
         col=c("#2ecc71", "#e74c3c"),
         ylab="Number of Accounts",
-        xlab="On ALAT for Business")
+        xlab="On Digital Banking for Business")
 
 pie(table(df$AFBStatus),
     labels=paste(names(table(df$AFBStatus)),
@@ -468,7 +468,7 @@ df['NotOnAFB'] = (df[afb_col] == 'No').astype(int)
 
 afb_dist = df[afb_col].value_counts()
 print("\n" + "="*70)
-print("ALAT FOR BUSINESS ENROLLMENT STATUS")
+print("Digital Banking FOR BUSINESS ENROLLMENT STATUS")
 print("="*70)
 print(afb_dist)
 print(f"\nPercentages:\n{(afb_dist/len(df)*100).round(1)}")
@@ -482,7 +482,7 @@ color_list = [colors.get(x, '#888') for x in afb_dist.index]
 afb_dist.plot(kind='bar', ax=axes[0], color=color_list, edgecolor='black')
 axes[0].set_title('AFB Enrollment Distribution', fontsize=13, fontweight='bold')
 axes[0].set_ylabel('Number of Accounts', fontsize=11)
-axes[0].set_xlabel('On ALAT for Business', fontsize=11)
+axes[0].set_xlabel('On Digital Banking for Business', fontsize=11)
 axes[0].tick_params(axis='x', rotation=0)
 axes[0].grid(axis='y', alpha=0.3)
 
@@ -497,7 +497,7 @@ plt.show()
 
 :::
 
-**Finding:** This chart reveals the size of the onboarding opportunity — the share of corporate accounts in the zone not yet enrolled in ALAT for Business. Non-enrolled accounts represent the primary target population for the onboarding drive.
+**Finding:** This chart reveals the size of the onboarding opportunity — the share of corporate accounts in the zone not yet enrolled in Digital Banking for Business. Non-enrolled accounts represent the primary target population for the onboarding drive.
 
 ---
 
@@ -1362,7 +1362,7 @@ The logistic regression framework, while statistically inapplicable on this samp
 6. Capture a "reason for dormancy/non-enrollment" CRM field post-engagement to build a richer conversion model in the next cycle.
 
 **Revenue case:**
-A conservative 60% conversion of the "High Priority — Outreach Now" tier (Active accounts) directly unlocks transaction fee income and digital float. Successfully reactivating and then onboarding even 40% of the Dormant tier doubles the addressable revenue opportunity. ALAT for Business also activates cross-sell triggers (payroll, FX, trade finance) that generate secondary income per account.
+A conservative 60% conversion of the "High Priority — Outreach Now" tier (Active accounts) directly unlocks transaction fee income and digital float. Successfully reactivating and then onboarding even 40% of the Dormant tier doubles the addressable revenue opportunity. Digital Banking for Business also activates cross-sell triggers (payroll, FX, trade finance) that generate secondary income per account.
 
 ---
 
@@ -1396,7 +1396,7 @@ A conservative 60% conversion of the "High Priority — Outreach Now" tier (Acti
 
 Adi, B. (2026). *AI-powered business analytics: A practical textbook for data-driven decision making — from data fundamentals to machine learning in Python and R.* Lagos Business School / markanalytics.online. https://markanalytics.online
 
-Mordi, P. (2026). *Corporate current accounts not enrolled in ALAT for Business — Apapa zone extract* [Dataset]. Commercial Banking Division, Retail & Commercial Banking, [Bank Name], Lagos, Nigeria. Data available on request from the author.
+Mordi, P. (2026). *Corporate current accounts not enrolled in Digital Banking for Business — Apapa zone extract* [Dataset]. Commercial Banking Division, Retail & Commercial Banking, [Bank Name], Lagos, Nigeria. Data available on request from the author.
 
 R Core Team. (2024). *R: A language and environment for statistical computing* (Version 4.x). R Foundation for Statistical Computing. https://www.R-project.org/
 
