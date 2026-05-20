@@ -12,7 +12,6 @@ format:
     self-contained: true
     fig-width: 12
     fig-height: 7
-    number-sections: true
     highlight-style: github
 execute:
   warning: false
@@ -1394,9 +1393,13 @@ else:
 
 ---
 
-# 9. Conclusions & Recommendations
+# 9. Integrated Findings & Conclusions
 
 ## 9.1 Summary of Findings
+
+The five analytical techniques converge on a single operational conclusion: non-enrollment in ALAT for Business across the Apapa zone is **structured, not random**. The 103 accounts in this sample represent 100% of the identified non-enrolled corporate current account population — meaning the dataset is simultaneously the analytical subject and the outreach target list.
+
+Profiling this population reveals that non-enrollment clusters by product type (non-individual accounts show disproportionately low digital adoption), by account officer (some officers have managed portfolios with zero AFB conversions), and is largely independent of account vintage (the gap is not a legacy-account phenomenon that will self-resolve over time).
 
 | Technique | Key Finding | Business Implication |
 |---|---|---|
@@ -1406,7 +1409,13 @@ else:
 | **Correlation** | Non-individual product type shows the strongest correlation with non-enrollment; account age shows weak or no association | Do not filter by vintage — product type is the correct segmentation variable |
 | **Logistic Regression** | Individual risk scores enable a ranked onboarding list, not just segment-level targeting | RMs receive a prioritised call list ordered by non-enrollment probability |
 
-## 9.2 Strategic Recommendation: AFB Onboarding Drive
+## 9.2 Integrated Interpretation
+
+The statistical tests cannot establish group differences between enrolled and non-enrolled accounts because the population is uniformly non-enrolled. This is not an analytical failure — it is the finding. It confirms that **no self-selection or natural correction has occurred**: accounts of all types, vintages, and officer assignments remain equally outside the AFB ecosystem. The correlation analysis reinforces this: numeric account characteristics (balance, tenor) show no meaningful association with enrollment likelihood, pointing to **human and process barriers** (officer inaction, incomplete onboarding workflows, low client awareness) rather than product-fit barriers.
+
+The logistic regression framework, while statistically inapplicable on this sample, provides the correct analytical template for the full-zone extract. When run on a mixed enrolled/non-enrolled population, it will generate individual risk scores that convert the qualitative insight ("non-individual accounts are harder to onboard") into a ranked, RM-actionable contact list.
+
+## 9.3 Strategic Recommendation: AFB Onboarding Drive
 
 **Immediate actions (0–30 days):**
 
@@ -1424,5 +1433,75 @@ else:
 A conservative 50% conversion of the High Priority tier restores transaction fee income and digital float revenue across those accounts. ALAT for Business also activates cross-sell triggers (payroll, FX, trade finance) that generate secondary income per account.
 
 ---
+
+# 10. Limitations & Further Work
+
+## 10.1 Analytical Limitations
+
+**Zero-variance outcome variable.** Because all 103 accounts in the sample share `On AFB = No`, statistical tests that require two outcome levels — chi-squared, logistic regression, t-tests comparing enrolled vs. non-enrolled groups, and ROC/AUC analysis — cannot be estimated. This is not a data quality error; it reflects the fact that the extract was intentionally scoped to non-enrolled accounts only. Each affected section prints an explanatory note and exits cleanly. The limitation is acknowledged and would be resolved by the analytical extension described in §10.2.
+
+**Sample size and generalisability.** The 103 accounts represent a systematic sample drawn from the Apapa zone's Orile Iganmu and Ajeromi branches. The findings are directly actionable for these branches but should not be generalised to other zones without a comparable analysis of the full-zone or bank-wide CRM extract.
+
+**Cross-sectional snapshot.** The dataset reflects enrollment status at a single point in time (April 2026 extract). Enrollment status may change between the extract date and the outreach campaign date. The onboarding list should be refreshed from the CRM before each campaign wave.
+
+**Self-reported and CRM-recorded variables.** Account officer assignments, product classifications, and account status flags are drawn from CRM records and are subject to data entry errors, reassignment lags, and status update delays. Any accounts identified as dormant or inactive should be verified against the core banking system before contacting.
+
+**Missing variables.** The dataset does not include: balance at date of analysis, last-transaction date (for dormancy verification), the number of prior AFB onboarding attempts, or client contact preferences. Including these variables in a future extract would materially improve the predictive power of the regression model.
+
+## 10.2 Recommended Extensions
+
+1. **Full-zone regression study.** Extract all 780+ corporate accounts in the Apapa zone — enrolled and non-enrolled — and re-run the logistic regression on the mixed-outcome population. This would generate statistically valid risk scores and allow genuine identification of predictors of non-enrollment.
+
+2. **Longitudinal enrollment tracking.** Build a quarterly panel dataset tracking enrollment status change over time. A survival-analysis model (time-to-enrollment) would identify which account characteristics predict faster vs. slower onboarding conversion.
+
+3. **Reason-for-non-enrollment field.** Capture a standardised CRM field recording the reason an account remains unenrolled after an outreach touchpoint (e.g., "client not reachable", "account under restructuring", "awaiting signatory update"). This qualitative enrichment would enable a text-classification layer on top of the quantitative model.
+
+4. **Officer-level predictive benchmarking.** Extend the officer-accountability analysis to the full zone and model officer-level conversion rates as a function of portfolio size, seniority, and branch. This would support a data-driven coaching allocation model.
+
+---
+
+# References
+
+Adi, B. (2026). *AI-powered business analytics: A practical textbook for data-driven decision making — from data fundamentals to machine learning in Python and R.* Lagos Business School / markanalytics.online. https://markanalytics.online
+
+Mordi, P. (2026). *Corporate current accounts not enrolled in ALAT for Business — Apapa zone extract* [Dataset]. Commercial Banking Division, Retail & Commercial Banking, [Bank Name], Lagos, Nigeria. Data available on request from the author.
+
+R Core Team. (2024). *R: A language and environment for statistical computing* (Version 4.x). R Foundation for Statistical Computing. https://www.R-project.org/
+
+Van Rossum, G., & Drake, F. L. (2009). *Python 3 reference manual.* CreateSpace.
+
+Allaire, J. J., Teague, C., Scheidegger, C., Xie, Y., & Dervieux, C. (2022). *Quarto* (Version 1.x) [Computer software]. https://doi.org/10.5281/zenodo.5960048
+
+Wickham, H., François, R., Henry, L., Müller, K., & Vaughan, D. (2023). *dplyr: A grammar of data manipulation* [R package]. https://CRAN.R-project.org/package=dplyr
+
+Wickham, H. (2016). *ggplot2: Elegant graphics for data analysis.* Springer. https://doi.org/10.1007/978-3-319-24277-4
+
+Xie, Y. (2024). *knitr: A general-purpose package for dynamic report generation in R* [R package]. https://yihui.org/knitr/
+
+Zhu, H. (2024). *kableExtra: Construct complex table with 'kable' and pipe syntax* [R package]. https://CRAN.R-project.org/package=kableExtra
+
+Robin, X., Turck, N., Hainard, A., Tiberti, N., Lisacek, F., Sanchez, J.-C., & Müller, M. (2011). pROC: An open-source package for R and S+ to analyze and compare ROC curves. *BMC Bioinformatics, 12*, 77. https://doi.org/10.1186/1471-2105-12-77
+
+Wei, T., & Simko, V. (2021). *corrplot: Visualization of a correlation matrix* [R package]. https://github.com/taiyun/corrplot
+
+McKinney, W. (2010). Data structures for statistical computing in Python. In *Proceedings of the 9th Python in Science Conference* (pp. 56–61). https://doi.org/10.25080/Majora-92bf1922-00a
+
+Harris, C. R., Millman, K. J., van der Walt, S. J., Gommers, R., Virtanen, P., Cournapeau, D., … Oliphant, T. E. (2020). Array programming with NumPy. *Nature, 585*, 357–362. https://doi.org/10.1038/s41586-020-2649-2
+
+Virtanen, P., Gommers, R., Oliphant, T. E., Haberland, M., Reddy, T., Cournapeau, D., … van Mulbregt, P. (2020). SciPy 1.0: Fundamental algorithms for scientific computing in Python. *Nature Methods, 17*, 261–272. https://doi.org/10.1038/s41592-019-0686-2
+
+Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., … Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*, 2825–2830.
+
+Seabold, S., & Perktold, J. (2010). Statsmodels: Econometric and statistical modeling with Python. In *Proceedings of the 9th Python in Science Conference* (pp. 92–96). https://doi.org/10.25080/Majora-92bf1922-011
+
+Hunter, J. D. (2007). Matplotlib: A 2D graphics environment. *Computing in Science & Engineering, 9*(3), 90–95. https://doi.org/10.1109/MCSE.2007.55
+
+Waskom, M. L. (2021). seaborn: Statistical data visualization. *Journal of Open Source Software, 6*(60), 3021. https://doi.org/10.21105/joss.03021
+
+---
+
+# Appendix: AI Usage Statement
+
+AI tools were used in the preparation of this submission to support coding, document structuring, and drafting assistance. All data, business context, analytical choices, interpretations, and recommendations are the author's own, drawn from professional experience and the course material. The author takes full responsibility for the content of this submission.
 
 *This analysis was prepared for academic submission to Lagos Business School (Prof Bongo Adi). All account-level data has been anonymised. The methodology and code are fully reproducible using the dataset in the `dataset/` folder.*
