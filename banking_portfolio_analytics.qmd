@@ -44,7 +44,6 @@ Key findings:
 **Job Title:** Zonal Manager, Commercial Banking Division
 **Zone:** Apapa
 **Portfolio Oversight:** 120+ corporate accounts across Apapa, Ikoyi, and Victoria Island
-**Portfolio Value:** ₦78bn in advances; ₦156bn in deposits
 **Reporting Line:** Head of Commercial Banking; Credit Committee member
 
 **Organisation:** Major Tier-1 Nigerian Commercial Bank
@@ -608,74 +607,74 @@ print(df['AccountAge'].describe().round(2))
 
 # 5. Data Visualisation (Technique 2)
 
-## 5.1 AFB Enrollment by Product Type
+## 5.1 Account Status by Product Type
 
 ::: {.panel-tabset}
 
 ## R Code
 
 ```{r viz_product_r}
-# Cross-tabulation
-crosstab <- table(df$ProductCategory, df$`On.AFB`)
-cat("=== CROSS-TABULATION: PRODUCT × AFB STATUS ===\n")
-kable(crosstab, caption="Product Type × AFB Enrollment") %>%
+df_vis5 <- df %>%
+  mutate(StatusGroup = ifelse(`Account.Status` == "Active", "Active", "Dormant/Inactive"))
+
+crosstab <- table(df_vis5$ProductCategory, df_vis5$StatusGroup)
+cat("=== CROSS-TABULATION: PRODUCT TYPE × ACCOUNT STATUS ===\n")
+kable(as.data.frame.matrix(crosstab),
+      caption="Product Type × Account Status") %>%
   kable_styling(bootstrap_options=c("striped", "hover"))
 
 cat("\n=== PROPORTIONAL BREAKDOWN (ROW %) ===\n")
 prop_table <- round(prop.table(crosstab, margin=1) * 100, 1)
 kable(prop_table) %>% kable_styling(bootstrap_options=c("striped", "hover"))
 
-# Visualisation
-df_vis <- df %>%
-  group_by(ProductCategory, `On.AFB`) %>%
-  summarise(Count = n(), .groups='drop')
+df_bar <- as.data.frame(crosstab) %>%
+  rename(ProductCategory=Var1, StatusGroup=Var2, Count=Freq)
 
-ggplot(df_vis, aes(x=ProductCategory, y=Count, fill=`On.AFB`)) +
+ggplot(df_bar, aes(x=ProductCategory, y=Count, fill=StatusGroup)) +
   geom_col(position="dodge", width=0.7, alpha=0.85) +
   geom_text(aes(label=Count), vjust=-0.4, position=position_dodge(width=0.7), size=3.5) +
-  scale_fill_manual(values=c("Yes"="#2ecc71", "No"="#e74c3c"),
-                    labels=c("Yes"="Enrolled", "No"="Not Enrolled")) +
-  labs(title="ALAT for Business Enrollment by Product Type",
-       subtitle="Non-individual accounts show a higher non-enrollment rate than corporate accounts",
-       x="Product Type", y="Number of Accounts", fill="On AFB") +
+  scale_fill_manual(values=c("Active"="#2ecc71", "Dormant/Inactive"="#e74c3c")) +
+  labs(title="Account Status by Product Type",
+       subtitle="Which product segments have the highest dormancy rates? — key for sequencing onboarding outreach",
+       x="Product Type", y="Number of Accounts", fill="Account Status") +
   theme(legend.position="right")
 ```
 
 ## Python Code
 
 ```{python viz_product_py}
-df['ProductCategory'] = df['Product Name'].apply(
-    lambda x: 'Non-Individual' if 'NON' in str(x).upper() else 'Corporate')
+df['StatusGroup'] = df['Account Status'].apply(
+    lambda x: 'Active' if x == 'Active' else 'Dormant/Inactive')
 
 print("\n" + "="*70)
-print("CROSS-TABULATION: PRODUCT × AFB STATUS")
+print("CROSS-TABULATION: PRODUCT TYPE × ACCOUNT STATUS")
 print("="*70)
-ct = pd.crosstab(df['ProductCategory'], df[afb_col])
+ct = pd.crosstab(df['ProductCategory'], df['StatusGroup'])
 print(ct)
 
 print("\n" + "="*70)
 print("PROPORTIONAL BREAKDOWN (ROW %)")
 print("="*70)
-ct_pct = pd.crosstab(df['ProductCategory'], df[afb_col], normalize='index') * 100
+ct_pct = pd.crosstab(df['ProductCategory'], df['StatusGroup'], normalize='index') * 100
 print(ct_pct.round(1))
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 ct.plot(kind='bar', ax=axes[0], color=['#2ecc71', '#e74c3c'], width=0.7)
-axes[0].set_title('AFB Enrollment by Product Type', fontsize=13, fontweight='bold')
+axes[0].set_title('Account Status by Product Type', fontsize=13, fontweight='bold')
 axes[0].set_xlabel('Product Type')
 axes[0].set_ylabel('Count')
-axes[0].legend(title='On AFB', labels=['Enrolled (Yes)', 'Not Enrolled (No)'])
+axes[0].legend(title='Account Status', labels=['Active', 'Dormant/Inactive'])
 axes[0].tick_params(axis='x', rotation=0)
 axes[0].grid(axis='y', alpha=0.3)
 
 ct_norm = ct.div(ct.sum(axis=1), axis=0) * 100
 ct_norm.plot(kind='bar', stacked=True, ax=axes[1], color=['#2ecc71', '#e74c3c'])
-axes[1].set_title('AFB Enrollment Rate (%) by Product Type', fontsize=13, fontweight='bold')
+axes[1].set_title('Account Status Rate (%) by Product Type', fontsize=13, fontweight='bold')
 axes[1].set_xlabel('Product Type')
 axes[1].set_ylabel('Percentage')
 axes[1].tick_params(axis='x', rotation=0)
-axes[1].legend(title='On AFB', labels=['Enrolled (Yes)', 'Not Enrolled (No)'])
+axes[1].legend(title='Account Status', labels=['Active', 'Dormant/Inactive'])
 axes[1].grid(axis='y', alpha=0.3)
 
 plt.tight_layout()
@@ -686,27 +685,27 @@ plt.show()
 
 ---
 
-## 5.2 Account Age vs. AFB Enrollment
+## 5.2 Account Age by Account Status
 
 ::: {.panel-tabset}
 
 ## R Code
 
 ```{r viz_age_r}
-df$AFBLabel <- ifelse(df$`On.AFB`=="Yes", "Enrolled", "Not Enrolled")
+df$StatusLabel <- ifelse(df$`Account.Status`=="Active", "Active", "Dormant/Inactive")
 
-ggplot(df, aes(x=AFBLabel, y=AccountAge, fill=AFBLabel)) +
+ggplot(df, aes(x=StatusLabel, y=AccountAge, fill=StatusLabel)) +
   geom_boxplot(alpha=0.6, outlier.shape=NA) +
   geom_jitter(width=0.2, alpha=0.3, size=2) +
-  scale_fill_manual(values=c("Enrolled"="#2ecc71", "Not Enrolled"="#e74c3c")) +
-  labs(title="Account Age Distribution by AFB Enrollment Status",
-       subtitle="Does account vintage predict whether a customer is on ALAT for Business?",
-       x="AFB Status", y="Account Age (Years)", fill="Status") +
+  scale_fill_manual(values=c("Active"="#2ecc71", "Dormant/Inactive"="#e74c3c")) +
+  labs(title="Account Age Distribution by Account Status",
+       subtitle="Are older accounts more likely to be dormant? Testing vintage as a prioritisation filter.",
+       x="Account Status", y="Account Age (Years)", fill="Status") +
   theme(legend.position="none")
 
-cat("\n=== ACCOUNT AGE BY AFB STATUS ===\n")
-age_by_afb <- df %>%
-  group_by(AFBLabel) %>%
+cat("\n=== ACCOUNT AGE BY ACCOUNT STATUS ===\n")
+age_by_status <- df %>%
+  group_by(StatusLabel) %>%
   summarise(
     Count  = n(),
     Mean   = round(mean(AccountAge, na.rm=TRUE), 2),
@@ -716,33 +715,37 @@ age_by_afb <- df %>%
     Max    = round(max(AccountAge, na.rm=TRUE), 2),
     .groups='drop'
   )
-kable(age_by_afb) %>% kable_styling(bootstrap_options=c("striped", "hover"))
+kable(age_by_status) %>% kable_styling(bootstrap_options=c("striped", "hover"))
 ```
 
 ## Python Code
 
 ```{python viz_age_py}
+df['StatusGroup'] = df['Account Status'].apply(
+    lambda x: 'Active' if x == 'Active' else 'Dormant/Inactive')
+
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-colors_afb = {'Yes': '#2ecc71', 'No': '#e74c3c'}
-for i, status in enumerate(['Yes', 'No']):
-    data = df[df[afb_col]==status]['AccountAge']
-    axes[0].scatter([i]*len(data), data, alpha=0.3, s=50, color=colors_afb[status])
+colors_st = {'Active': '#2ecc71', 'Dormant/Inactive': '#e74c3c'}
+for i, grp in enumerate(['Active', 'Dormant/Inactive']):
+    data = df[df['StatusGroup']==grp]['AccountAge']
+    axes[0].scatter([i]*len(data), data, alpha=0.3, s=50, color=colors_st[grp])
 
-bp = axes[0].boxplot([df[df[afb_col]==s]['AccountAge'].dropna() for s in ['Yes','No']],
-                      labels=['Enrolled (Yes)','Not Enrolled (No)'], patch_artist=True)
-for patch, status in zip(bp['boxes'], ['Yes','No']):
-    patch.set_facecolor(colors_afb[status]); patch.set_alpha(0.6)
+bp = axes[0].boxplot(
+    [df[df['StatusGroup']==g]['AccountAge'].dropna() for g in ['Active','Dormant/Inactive']],
+    labels=['Active','Dormant/Inactive'], patch_artist=True)
+for patch, grp in zip(bp['boxes'], ['Active','Dormant/Inactive']):
+    patch.set_facecolor(colors_st[grp]); patch.set_alpha(0.6)
 
-axes[0].set_title('Account Age by AFB Status', fontsize=13, fontweight='bold')
+axes[0].set_title('Account Age by Account Status', fontsize=13, fontweight='bold')
 axes[0].set_ylabel('Account Age (Years)')
 axes[0].grid(True, alpha=0.3, axis='y')
 
-for status in ['Yes','No']:
-    data = df[df[afb_col]==status]['AccountAge']
-    axes[1].hist(data, alpha=0.5, bins=10, label=f"{'Enrolled' if status=='Yes' else 'Not Enrolled'}",
-                 color=colors_afb[status], edgecolor='black')
-axes[1].set_title('Account Age Distribution by AFB Status', fontsize=13, fontweight='bold')
+for grp in ['Active', 'Dormant/Inactive']:
+    data = df[df['StatusGroup']==grp]['AccountAge']
+    axes[1].hist(data, alpha=0.5, bins=10, label=grp,
+                 color=colors_st[grp], edgecolor='black')
+axes[1].set_title('Account Age Distribution by Account Status', fontsize=13, fontweight='bold')
 axes[1].set_xlabel('Account Age (Years)')
 axes[1].set_ylabel('Frequency')
 axes[1].legend()
@@ -751,15 +754,15 @@ axes[1].grid(True, alpha=0.3, axis='y')
 plt.tight_layout()
 plt.show()
 
-print("\nAccount Age by AFB Status:")
-print(df.groupby(afb_col)['AccountAge'].describe().round(2))
+print("\nAccount Age by Account Status:")
+print(df.groupby('StatusGroup')['AccountAge'].describe().round(2))
 ```
 
 :::
 
 ---
 
-## 5.3 AFB Enrollment by Account Officer (Top 6)
+## 5.3 Account Status by Account Officer (Top 6)
 
 ::: {.panel-tabset}
 
@@ -775,47 +778,50 @@ top_officers <- df %>%
 
 df_top_off <- df %>%
   filter(`Account.Officer` %in% top_officers) %>%
-  group_by(`Account.Officer`, `On.AFB`) %>%
+  mutate(StatusGroup = ifelse(`Account.Status`=="Active","Active","Dormant/Inactive")) %>%
+  group_by(`Account.Officer`, StatusGroup) %>%
   summarise(Count = n(), .groups='drop')
 
-ggplot(df_top_off, aes(x=reorder(`Account.Officer`, -Count), y=Count, fill=`On.AFB`)) +
+ggplot(df_top_off, aes(x=reorder(`Account.Officer`, -Count), y=Count, fill=StatusGroup)) +
   geom_col(position="dodge", width=0.7, alpha=0.85) +
-  scale_fill_manual(values=c("Yes"="#2ecc71","No"="#e74c3c"),
-                    labels=c("Yes"="Enrolled","No"="Not Enrolled")) +
-  labs(title="AFB Enrollment by Top 6 Account Officers",
-       subtitle="Officer-level conversion rates determine onboarding accountability targets",
-       x="Account Officer", y="Number of Accounts", fill="On AFB") +
+  scale_fill_manual(values=c("Active"="#2ecc71","Dormant/Inactive"="#e74c3c")) +
+  labs(title="Account Status by Top 6 Account Officers",
+       subtitle="Officers with high dormancy rates are priority targets for the reactivation + AFB onboarding campaign",
+       x="Account Officer", y="Number of Accounts", fill="Account Status") +
   theme(axis.text.x=element_text(angle=45, hjust=1))
 ```
 
 ## Python Code
 
 ```{python viz_officer_py}
-top_officers = df['Account Officer'].value_counts().head(6).index.tolist()
-df_top = df[df['Account Officer'].isin(top_officers)]
+df['StatusGroup'] = df['Account Status'].apply(
+    lambda x: 'Active' if x == 'Active' else 'Dormant/Inactive')
 
-officer_afb_ct = df_top.groupby(['Account Officer', afb_col]).size().unstack(fill_value=0)
+top_officers = df['Account Officer'].value_counts().head(6).index.tolist()
+df_top = df[df['Account Officer'].isin(top_officers)].copy()
+
+officer_st_ct = df_top.groupby(['Account Officer', 'StatusGroup']).size().unstack(fill_value=0)
 
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-officer_afb_ct.plot(kind='bar', ax=axes[0], color=['#2ecc71','#e74c3c'], width=0.8)
-axes[0].set_title('AFB Enrollment by Top 6 Officers', fontsize=13, fontweight='bold')
+officer_st_ct.plot(kind='bar', ax=axes[0], color=['#2ecc71','#e74c3c'], width=0.8)
+axes[0].set_title('Account Status by Top 6 Officers', fontsize=13, fontweight='bold')
 axes[0].set_xlabel('Account Officer')
 axes[0].set_ylabel('Count')
-axes[0].legend(title='On AFB', labels=['Enrolled','Not Enrolled'])
+axes[0].legend(title='Account Status', labels=['Active', 'Dormant/Inactive'])
 axes[0].tick_params(axis='x', rotation=45)
 axes[0].grid(axis='y', alpha=0.3)
 
-enroll_rate = df_top.groupby('Account Officer').apply(
-    lambda x: (x[afb_col]=='Yes').sum()/len(x)*100
-).sort_values(ascending=False)
+active_rate = df_top.groupby('Account Officer').apply(
+    lambda x: (x['StatusGroup']=='Active').sum()/len(x)*100
+).sort_values(ascending=True)
 
-axes[1].barh(range(len(enroll_rate)), enroll_rate.values, color='#2ecc71')
-axes[1].set_yticks(range(len(enroll_rate)))
-axes[1].set_yticklabels(enroll_rate.index)
-axes[1].set_title('AFB Enrollment Rate by Officer (%)', fontsize=13, fontweight='bold')
-axes[1].set_xlabel('% Accounts Enrolled on AFB')
-zone_avg = (df[afb_col]=='Yes').sum()/len(df)*100
+axes[1].barh(range(len(active_rate)), active_rate.values, color='#2ecc71')
+axes[1].set_yticks(range(len(active_rate)))
+axes[1].set_yticklabels(active_rate.index)
+axes[1].set_title('Active Account Rate by Officer (%)', fontsize=13, fontweight='bold')
+axes[1].set_xlabel('% Accounts Active')
+zone_avg = (df['StatusGroup']=='Active').sum()/len(df)*100
 axes[1].axvline(zone_avg, color='red', linestyle='--', linewidth=2,
                 label=f'Zone Avg: {zone_avg:.1f}%')
 axes[1].legend()
@@ -831,71 +837,66 @@ plt.show()
 
 # 6. Hypothesis Testing (Technique 3)
 
-## 6.1 Hypothesis 1 — Product Type & AFB Enrollment
+## 6.1 Hypothesis 1 — Product Type & Account Status
 
-**Research Question:** Do non-individual accounts show significantly lower AFB enrollment rates compared to corporate accounts?
+**Research Question:** Is account dormancy significantly associated with product type? Do non-individual accounts show higher dormancy rates than corporate current accounts?
 
-**H₀:** AFB enrollment status is independent of product type
-**H₁:** AFB enrollment status is associated with product type
+**H₀:** Account status (Active vs Dormant/Inactive) is independent of product type
+**H₁:** Account status is associated with product type
 
 ::: {.panel-tabset}
 
 ## R Code
 
 ```{r hyp1_r}
-contingency <- table(df$ProductCategory, df$`On.AFB`)
-cat("=== CONTINGENCY TABLE: PRODUCT TYPE × AFB STATUS ===\n")
-print(kable(as.data.frame.matrix(contingency)) %>%
-      kable_styling(bootstrap_options=c("striped","hover")))
+df_h1 <- df %>%
+  mutate(StatusGroup = ifelse(`Account.Status` == "Active", "Active", "Dormant/Inactive"))
 
-n_afb_levels <- ncol(contingency)
+contingency <- table(df_h1$ProductCategory, df_h1$StatusGroup)
+cat("=== CONTINGENCY TABLE: PRODUCT TYPE × ACCOUNT STATUS ===\n")
+kable(as.data.frame.matrix(contingency),
+      caption="Product Type × Account Status") %>%
+  kable_styling(bootstrap_options=c("striped","hover"))
 
-if (n_afb_levels < 2) {
-  cat("\nNote: Only one AFB value present in this dataset —",
-      "all sampled accounts are non-enrolled (On AFB = 'No').\n")
-  cat("Chi-squared test requires at least 2 categories; skipping.\n")
-  cat("This confirms the dataset is the target onboarding population.\n")
-} else {
-  chi_test  <- chisq.test(contingency)
-  n         <- nrow(df)
-  denom     <- n * (min(dim(contingency)) - 1)
-  cramers_v <- if (denom > 0) sqrt(chi_test$statistic / denom) else NA_real_
+chi_test  <- chisq.test(contingency)
+n         <- nrow(df_h1)
+denom     <- n * (min(dim(contingency)) - 1)
+cramers_v <- if (denom > 0) sqrt(chi_test$statistic / denom) else NA_real_
 
-  cat("\n=== CHI-SQUARED TEST: PRODUCT TYPE × AFB STATUS ===\n")
-  cat("Chi-squared:", round(chi_test$statistic, 4), "\n")
-  cat("p-value:    ", round(chi_test$p.value,    4), "\n")
-  cat("DoF:        ", chi_test$parameter,         "\n")
-  cat("Decision (α=0.05):",
-      ifelse(chi_test$p.value < 0.05, "REJECT H₀", "FAIL TO REJECT H₀"), "\n")
-  cat("\nEffect Size (Cramér's V):", round(cramers_v, 4), "\n")
-}
+cat("\n=== CHI-SQUARED TEST: PRODUCT TYPE × ACCOUNT STATUS ===\n")
+cat("Chi-squared:", round(chi_test$statistic, 4), "\n")
+cat("p-value:    ", round(chi_test$p.value,    4), "\n")
+cat("DoF:        ", chi_test$parameter,         "\n")
+cat("Decision (α=0.05):",
+    ifelse(chi_test$p.value < 0.05, "REJECT H₀", "FAIL TO REJECT H₀"), "\n")
+cat("\nEffect Size (Cramér's V):", round(cramers_v, 4), "\n")
 
-cat("\n=== NON-ENROLLMENT RATES BY PRODUCT ===\n")
-non_enroll_by_prod <- df %>%
+cat("\n=== DORMANCY RATES BY PRODUCT TYPE ===\n")
+status_by_prod <- df_h1 %>%
   group_by(ProductCategory) %>%
   summarise(
-    Total              = n(),
-    Enrolled           = sum(`On.AFB` == "Yes", na.rm=TRUE),
-    NotEnrolled        = sum(`On.AFB` == "No",  na.rm=TRUE),
-    NonEnrollment_Rate = paste0(round(NotEnrolled / Total * 100, 1), "%"),
+    Total          = n(),
+    Active         = sum(StatusGroup == "Active"),
+    DormantInact   = sum(StatusGroup == "Dormant/Inactive"),
+    Active_Rate    = paste0(round(Active / Total * 100, 1), "%"),
+    Dormancy_Rate  = paste0(round(DormantInact / Total * 100, 1), "%"),
     .groups='drop'
   )
-kable(non_enroll_by_prod) %>% kable_styling(bootstrap_options=c("striped", "hover"))
+kable(status_by_prod,
+      caption="Account Status by Product Type") %>%
+  kable_styling(bootstrap_options=c("striped", "hover"))
 
-# Odds ratio — only meaningful when both enrolled and unenrolled groups exist
-corp_yes <- nrow(filter(df, ProductCategory=="Corporate",     `On.AFB`=="Yes"))
-corp_no  <- nrow(filter(df, ProductCategory=="Corporate",     `On.AFB`=="No"))
-noni_yes <- nrow(filter(df, ProductCategory=="Non-Individual", `On.AFB`=="Yes"))
-noni_no  <- nrow(filter(df, ProductCategory=="Non-Individual", `On.AFB`=="No"))
+corp_act  <- nrow(filter(df_h1, ProductCategory=="Corporate",      StatusGroup=="Active"))
+corp_dorm <- nrow(filter(df_h1, ProductCategory=="Corporate",      StatusGroup=="Dormant/Inactive"))
+noni_act  <- nrow(filter(df_h1, ProductCategory=="Non-Individual", StatusGroup=="Active"))
+noni_dorm <- nrow(filter(df_h1, ProductCategory=="Non-Individual", StatusGroup=="Dormant/Inactive"))
 
-if (corp_yes > 0 & noni_yes > 0) {
-  odds_ratio <- (noni_no / noni_yes) / (corp_no / corp_yes)
-  cat("\n=== ODDS RATIO ===\n")
+if (corp_act > 0 & noni_act > 0) {
+  odds_ratio <- (noni_dorm / noni_act) / (corp_dorm / corp_act)
+  cat("\n=== ODDS RATIO (Dormancy) ===\n")
   cat("OR:", round(odds_ratio, 3), "\n")
   cat("Non-individual accounts are", round(odds_ratio, 2),
-      "times MORE likely to be unenrolled in AFB\n")
-} else {
-  cat("\nOdds ratio not calculable — no enrolled accounts in one or both product groups.\n")
+      "times more likely to be Dormant/Inactive than Corporate accounts.\n")
 }
 ```
 
@@ -904,103 +905,90 @@ if (corp_yes > 0 & noni_yes > 0) {
 ```{python hyp1_py}
 from scipy.stats import chi2_contingency
 
-ct = pd.crosstab(df['ProductCategory'], df[afb_col])
+df_h1 = df.copy()
+df_h1['StatusGroup'] = df_h1['Account Status'].apply(
+    lambda x: 'Active' if x == 'Active' else 'Dormant/Inactive')
+
+ct = pd.crosstab(df_h1['ProductCategory'], df_h1['StatusGroup'])
 print("\n" + "="*70)
-print("CONTINGENCY TABLE: PRODUCT TYPE × AFB STATUS")
+print("CONTINGENCY TABLE: PRODUCT TYPE × ACCOUNT STATUS")
 print("="*70)
 print(ct)
 
-n_levels = ct.shape[1]  # number of distinct AFB values in this dataset
+chi2, p_val, dof, expected = chi2_contingency(ct)
+n = len(df_h1)
+denom = n * (min(ct.shape) - 1)
+cramers_v = np.sqrt(chi2 / denom) if denom > 0 else np.nan
 
-if n_levels < 2:
-    print("\nNote: Only one AFB value present in this dataset —")
-    print("all sampled accounts are non-enrolled (On AFB = 'No').")
-    print("Chi-squared test requires at least 2 categories; skipping.")
-    print("\nThis confirms the dataset is the target population for onboarding:")
-    print("100% of sampled accounts need AFB onboarding.")
-else:
-    chi2, p_val, dof, expected = chi2_contingency(ct)
-    denom = n * (min(ct.shape) - 1)
-    cramers_v = np.sqrt(chi2 / denom) if denom > 0 else np.nan
-
-    print("\n" + "="*70)
-    print("CHI-SQUARED TEST: PRODUCT TYPE × AFB STATUS")
-    print("="*70)
-    print(f"Chi-squared: {chi2:.4f}")
-    print(f"p-value:     {p_val:.4f}")
-    print(f"DoF:         {dof}")
-    print(f"Decision (α=0.05): {'REJECT H₀' if p_val < 0.05 else 'FAIL TO REJECT H₀'}")
-    print(f"\nEffect Size (Cramér's V): {cramers_v:.4f}")
-
-n = len(df)
 print("\n" + "="*70)
-print("NON-ENROLLMENT RATES BY PRODUCT TYPE")
+print("CHI-SQUARED TEST: PRODUCT TYPE × ACCOUNT STATUS")
 print("="*70)
-prod_stats = df.groupby('ProductCategory').apply(lambda g: pd.Series({
-    'Total':           len(g),
-    'Enrolled':        (g[afb_col]=='Yes').sum(),
-    'NotEnrolled':     (g[afb_col]=='No').sum(),
-    'NonEnrollment_%': round((g[afb_col]=='No').sum() / len(g) * 100, 1) if len(g) > 0 else np.nan
+print(f"Chi-squared: {chi2:.4f}")
+print(f"p-value:     {p_val:.4f}")
+print(f"DoF:         {dof}")
+print(f"Decision (α=0.05): {'REJECT H₀' if p_val < 0.05 else 'FAIL TO REJECT H₀'}")
+print(f"\nEffect Size (Cramér's V): {cramers_v:.4f}")
+
+print("\n" + "="*70)
+print("DORMANCY RATES BY PRODUCT TYPE")
+print("="*70)
+status_stats = df_h1.groupby('ProductCategory').apply(lambda g: pd.Series({
+    'Total':          len(g),
+    'Active':         (g['StatusGroup']=='Active').sum(),
+    'DormantInact':   (g['StatusGroup']=='Dormant/Inactive').sum(),
+    'Active_Rate_%':  round((g['StatusGroup']=='Active').sum() / len(g) * 100, 1),
+    'Dormancy_Rate_%':round((g['StatusGroup']=='Dormant/Inactive').sum() / len(g) * 100, 1)
 }))
-print(prod_stats)
+print(status_stats)
 ```
 
 :::
 
 ---
 
-## 6.2 Hypothesis 2 — Account Age & AFB Enrollment
+## 6.2 Hypothesis 2 — Account Age & Account Status
 
-**Research Question:** Is there a statistically significant difference in account age between enrolled and non-enrolled accounts?
+**Research Question:** Is there a statistically significant difference in account age between Active and Dormant/Inactive accounts? Does vintage predict dormancy?
 
-**H₀:** μ_enrolled = μ_not_enrolled
-**H₁:** μ_enrolled ≠ μ_not_enrolled
+**H₀:** μ_active = μ_dormant (mean account age is the same for Active and Dormant/Inactive accounts)
+**H₁:** μ_active ≠ μ_dormant
 
 ::: {.panel-tabset}
 
 ## R Code
 
 ```{r hyp2_r}
-enrolled_age    <- df %>% filter(`On.AFB`=="Yes") %>% pull(AccountAge)
-notenrolled_age <- df %>% filter(`On.AFB`=="No")  %>% pull(AccountAge)
+active_age  <- df %>% filter(`Account.Status` == "Active")  %>% pull(AccountAge)
+dormant_age <- df %>% filter(`Account.Status` != "Active")  %>% pull(AccountAge)
 
-cat("Group sizes — Enrolled:", length(enrolled_age),
-    "| Not Enrolled:", length(notenrolled_age), "\n\n")
+cat("Group sizes — Active:", length(active_age),
+    "| Dormant/Inactive:", length(dormant_age), "\n\n")
 
-if (length(enrolled_age) < 3) {
-  cat("Note: Fewer than 3 enrolled accounts in this sample.\n")
-  cat("Shapiro-Wilk and t-test require at least 3 observations per group.\n")
-  cat("Result: Cannot compare age distributions between enrolled and non-enrolled —\n")
-  cat("all or nearly all sampled accounts are non-enrolled (On AFB = 'No').\n")
-  cat("The dataset represents the full onboarding target population.\n")
-} else {
-  cat("=== NORMALITY CHECKS (SHAPIRO-WILK) ===\n")
-  shap_enr   <- if (length(enrolled_age)    >= 3) shapiro.test(enrolled_age)    else NULL
-  shap_noenr <- if (length(notenrolled_age) >= 3) shapiro.test(notenrolled_age) else NULL
+cat("=== NORMALITY CHECKS (SHAPIRO-WILK) ===\n")
+shap_act  <- shapiro.test(active_age)
+shap_dorm <- shapiro.test(dormant_age)
+cat("Active:           W=", round(shap_act$statistic,  4), " p=", round(shap_act$p.value,  4), "\n")
+cat("Dormant/Inactive: W=", round(shap_dorm$statistic, 4), " p=", round(shap_dorm$p.value, 4), "\n")
 
-  if (!is.null(shap_enr))
-    cat("Enrolled:     W=", round(shap_enr$statistic,  4), " p=", round(shap_enr$p.value,  4), "\n")
-  if (!is.null(shap_noenr))
-    cat("Not Enrolled: W=", round(shap_noenr$statistic, 4), " p=", round(shap_noenr$p.value, 4), "\n")
+cat("\n=== WELCH'S t-TEST ===\n")
+t_test <- t.test(active_age, dormant_age, var.equal=FALSE)
+print(t_test)
 
-  cat("\n=== WELCH'S t-TEST ===\n")
-  t_test <- t.test(enrolled_age, notenrolled_age, var.equal=FALSE)
-  print(t_test)
+pooled_sd <- sqrt(((length(active_age)-1)*var(active_age) +
+                    (length(dormant_age)-1)*var(dormant_age)) /
+                   (length(active_age) + length(dormant_age) - 2))
+cohens_d <- (mean(active_age) - mean(dormant_age)) / pooled_sd
+cat("\nEffect Size (Cohen's d):", round(cohens_d, 4), "\n")
 
-  pooled_sd <- sqrt(((length(enrolled_age)-1)*var(enrolled_age) +
-                      (length(notenrolled_age)-1)*var(notenrolled_age)) /
-                     (length(enrolled_age) + length(notenrolled_age) - 2))
-  cohens_d <- (mean(enrolled_age) - mean(notenrolled_age)) / pooled_sd
-  cat("\nEffect Size (Cohen's d):", round(cohens_d, 4), "\n")
+cat("\n=== MANN-WHITNEY U (non-parametric) ===\n")
+mw_test <- wilcox.test(active_age, dormant_age)
+print(mw_test)
 
-  cat("\n=== MANN-WHITNEY U (non-parametric) ===\n")
-  mw_test <- wilcox.test(enrolled_age, notenrolled_age)
-  print(mw_test)
-
-  cat("\n=== CONCLUSION ===\n")
-  cat("Mean difference:", round(mean(enrolled_age) - mean(notenrolled_age), 3), "years\n")
-  cat("Decision:", ifelse(t_test$p.value < 0.05, "REJECT H₀", "FAIL TO REJECT H₀"), "\n")
-}
+cat("\n=== CONCLUSION ===\n")
+cat("Mean account age — Active:", round(mean(active_age), 2), "yrs",
+    "| Dormant/Inactive:", round(mean(dormant_age), 2), "yrs\n")
+cat("Mean difference:", round(mean(active_age) - mean(dormant_age), 3), "years\n")
+cat("Decision:", ifelse(t_test$p.value < 0.05, "REJECT H₀", "FAIL TO REJECT H₀"), "\n")
 ```
 
 ## Python Code
@@ -1008,50 +996,42 @@ if (length(enrolled_age) < 3) {
 ```{python hyp2_py}
 from scipy.stats import shapiro, ttest_ind, mannwhitneyu
 
-enrolled_age    = df[df[afb_col]=='Yes']['AccountAge'].dropna()
-notenrolled_age = df[df[afb_col]=='No']['AccountAge'].dropna()
+active_age  = df[df['Account Status']=='Active']['AccountAge'].dropna()
+dormant_age = df[df['Account Status']!='Active']['AccountAge'].dropna()
 
-print(f"Group sizes — Enrolled: {len(enrolled_age)} | Not Enrolled: {len(notenrolled_age)}\n")
+print(f"Group sizes — Active: {len(active_age)} | Dormant/Inactive: {len(dormant_age)}\n")
 
-if len(enrolled_age) < 3:
-    print("Note: Fewer than 3 enrolled accounts in this sample.")
-    print("Shapiro-Wilk and t-test require at least 3 observations per group.")
-    print("Result: All or nearly all sampled accounts are non-enrolled (On AFB = 'No').")
-    print("The dataset represents the full onboarding target population.")
-else:
-    print("\n" + "="*70)
-    print("NORMALITY CHECKS (SHAPIRO-WILK)")
-    print("="*70)
-    if len(enrolled_age) >= 3:
-        s1, p1 = shapiro(enrolled_age)
-        print(f"Enrolled:     W={s1:.4f}, p={p1:.4f}")
-    if len(notenrolled_age) >= 3:
-        s2, p2 = shapiro(notenrolled_age)
-        print(f"Not Enrolled: W={s2:.4f}, p={p2:.4f}")
+print("\n" + "="*70)
+print("NORMALITY CHECKS (SHAPIRO-WILK)")
+print("="*70)
+s1, p1 = shapiro(active_age)
+s2, p2 = shapiro(dormant_age)
+print(f"Active:           W={s1:.4f}, p={p1:.4f}")
+print(f"Dormant/Inactive: W={s2:.4f}, p={p2:.4f}")
 
-    print("\n" + "="*70)
-    print("WELCH'S t-TEST")
-    print("="*70)
-    t_stat, t_pval = ttest_ind(enrolled_age, notenrolled_age, equal_var=False)
-    print(f"t-statistic:      {t_stat:.4f}")
-    print(f"p-value:          {t_pval:.4f}")
-    print(f"Mean Enrolled:    {enrolled_age.mean():.2f} yrs")
-    print(f"Mean NotEnrolled: {notenrolled_age.mean():.2f} yrs")
+print("\n" + "="*70)
+print("WELCH'S t-TEST")
+print("="*70)
+t_stat, t_pval = ttest_ind(active_age, dormant_age, equal_var=False)
+print(f"t-statistic:          {t_stat:.4f}")
+print(f"p-value:              {t_pval:.4f}")
+print(f"Mean Active:          {active_age.mean():.2f} yrs")
+print(f"Mean Dormant/Inact:   {dormant_age.mean():.2f} yrs")
 
-    denom = len(enrolled_age) + len(notenrolled_age) - 2
-    if denom > 0 and enrolled_age.var() > 0 and notenrolled_age.var() > 0:
-        pooled_std = np.sqrt(((len(enrolled_age)-1)*enrolled_age.var() +
-                              (len(notenrolled_age)-1)*notenrolled_age.var()) / denom)
-        print(f"Cohen's d:        {(enrolled_age.mean()-notenrolled_age.mean())/pooled_std:.4f}")
+denom = len(active_age) + len(dormant_age) - 2
+if denom > 0 and active_age.var() > 0 and dormant_age.var() > 0:
+    pooled_std = np.sqrt(((len(active_age)-1)*active_age.var() +
+                          (len(dormant_age)-1)*dormant_age.var()) / denom)
+    print(f"Cohen's d:            {(active_age.mean()-dormant_age.mean())/pooled_std:.4f}")
 
-    u_stat, u_pval = mannwhitneyu(enrolled_age, notenrolled_age, alternative='two-sided')
-    print(f"\nMann-Whitney U: {u_stat:.4f}, p={u_pval:.4f}")
-    print(f"\nDecision: {'REJECT H₀' if t_pval < 0.05 else 'FAIL TO REJECT H₀'}")
+u_stat, u_pval = mannwhitneyu(active_age, dormant_age, alternative='two-sided')
+print(f"\nMann-Whitney U: {u_stat:.4f}, p={u_pval:.4f}")
+print(f"\nDecision: {'REJECT H₀' if t_pval < 0.05 else 'FAIL TO REJECT H₀'}")
 ```
 
 :::
 
-**Implication:** If account age does NOT significantly predict enrollment, vintage-based targeting is inefficient — the onboarding campaign should focus on product type and officer assignment, not on filtering old accounts.
+**Implication:** If account age does NOT significantly predict dormancy, vintage-based filtering is inefficient — the onboarding campaign should segment by product type and officer portfolio, not by how old the account is. If age DOES predict dormancy, newer accounts should be prioritised in the first outreach wave.
 
 ---
 
@@ -1064,35 +1044,34 @@ else:
 ```{r correlation_r}
 df_numeric <- df %>%
   mutate(
-    NotOnAFB       = ifelse(`On.AFB` == "No", 1, 0),
-    IsNonIndividual = ifelse(ProductCategory == "Non-Individual", 1, 0),
-    IsDormant      = ifelse(`Account.Status` == "Dormant", 1, 0)
+    IsDormant       = ifelse(`Account.Status` != "Active", 1, 0),
+    IsNonIndividual = ifelse(ProductCategory == "Non-Individual", 1, 0)
   ) %>%
-  select(AccountAge, NotOnAFB, IsNonIndividual, IsDormant) %>%
+  select(AccountAge, IsNonIndividual, IsDormant) %>%
   na.omit()
 
 cor_matrix <- cor(df_numeric)
 
 cat("=== CORRELATION MATRIX ===\n")
 kable(round(cor_matrix, 3),
-      caption="Correlation Matrix: AFB Enrollment and Account Characteristics") %>%
+      caption="Correlation Matrix: Account Dormancy and Characteristics") %>%
   kable_styling(bootstrap_options=c("striped", "hover"))
 
 corrplot(cor_matrix,
          method="color", type="upper", addCoef.col="black",
          number.cex=0.8, diag=FALSE, tl.col="black", tl.srt=45,
-         main="Correlation Matrix: AFB Non-Enrollment Drivers")
+         main="Correlation Matrix: Drivers of Account Dormancy")
 
-cat("\n=== CORRELATIONS WITH NON-ENROLLMENT ===\n")
-non_enroll_cors <- sort(cor_matrix[,"NotOnAFB"], decreasing=TRUE)
-kable(data.frame(Variable=names(non_enroll_cors),
-                 Correlation=round(non_enroll_cors, 3)),
-      caption="Variables Correlated with AFB Non-Enrollment") %>%
+cat("\n=== CORRELATIONS WITH DORMANCY (IsDormant) ===\n")
+dormancy_cors <- sort(cor_matrix[,"IsDormant"], decreasing=TRUE)
+kable(data.frame(Variable=names(dormancy_cors),
+                 Correlation=round(dormancy_cors, 3)),
+      caption="Variables Correlated with Account Dormancy") %>%
   kable_styling(bootstrap_options=c("striped", "hover"))
 
 cat("\n=== PEARSON SIGNIFICANCE TESTS ===\n")
-for (var in c("AccountAge", "IsNonIndividual", "IsDormant")) {
-  ct <- cor.test(df_numeric[[var]], df_numeric$NotOnAFB)
+for (var in c("AccountAge", "IsNonIndividual")) {
+  ct <- cor.test(df_numeric[[var]], df_numeric$IsDormant)
   cat(sprintf("\n%s: r=%.4f, p=%.4f, Sig=%s\n",
               var, ct$estimate, ct$p.value,
               ifelse(ct$p.value < 0.05, "YES*", "no")))
@@ -1105,64 +1084,44 @@ for (var in c("AccountAge", "IsNonIndividual", "IsDormant")) {
 from scipy.stats import pearsonr
 
 df_corr = df.copy()
-df_corr['NotOnAFB']        = (df_corr[afb_col] == 'No').astype(int)
+df_corr['IsDormant']       = (df_corr['Account Status'] != 'Active').astype(int)
 df_corr['IsNonIndividual'] = (df_corr['ProductCategory'] == 'Non-Individual').astype(int)
-df_corr['IsDormant']       = (df_corr['Account Status'] == 'Dormant').astype(int)
 
-numeric_cols = ['AccountAge', 'NotOnAFB', 'IsNonIndividual', 'IsDormant']
+numeric_cols = ['AccountAge', 'IsNonIndividual', 'IsDormant']
 df_num = df_corr[numeric_cols].dropna()
 
-# Drop constant columns (zero variance) before computing correlations
-varying_cols = [c for c in df_num.columns if df_num[c].std() > 0]
-df_num_var   = df_num[varying_cols]
+cor_matrix = df_num.corr()
 
-if len(df_num_var.columns) < 2:
-    print("All variables are constant — no correlations can be computed.")
-    print("Note: If On AFB = 'No' for all records, NotOnAFB has zero variance.")
-else:
-    cor_matrix = df_num_var.corr()
+print("\n" + "="*70)
+print("CORRELATION MATRIX")
+print("="*70)
+print(cor_matrix.round(3))
 
-    print("\n" + "="*70)
-    print("CORRELATION MATRIX")
-    print("="*70)
-    print(cor_matrix.round(3))
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+sns.heatmap(cor_matrix, annot=True, fmt='.3f', cmap='coolwarm',
+            center=0, square=True, ax=axes[0], cbar_kws={'label': 'Correlation'})
+axes[0].set_title('Correlation Matrix: Account Characteristics', fontsize=13, fontweight='bold')
 
-    sns.heatmap(cor_matrix, annot=True, fmt='.3f', cmap='coolwarm',
-                center=0, square=True, ax=axes[0], cbar_kws={'label': 'Correlation'})
-    axes[0].set_title('Correlation Matrix: Account Characteristics', fontsize=13, fontweight='bold')
+target_cors = cor_matrix['IsDormant'].drop('IsDormant').sort_values(ascending=False)
+colors = ['#e74c3c' if x > 0 else '#3498db' for x in target_cors.values]
+axes[1].barh(range(len(target_cors)), target_cors.values, color=colors)
+axes[1].set_yticks(range(len(target_cors)))
+axes[1].set_yticklabels(target_cors.index)
+axes[1].set_xlabel('Correlation Coefficient')
+axes[1].set_title('Predictors of Account Dormancy', fontsize=13, fontweight='bold')
+axes[1].axvline(0, color='black', linewidth=0.5)
+axes[1].grid(True, alpha=0.3, axis='x')
 
-    if 'NotOnAFB' in cor_matrix.columns:
-        target_cors = cor_matrix['NotOnAFB'].drop('NotOnAFB').sort_values(ascending=False)
-        title2 = 'Predictors of AFB Non-Enrollment'
-    else:
-        # NotOnAFB was constant — show correlations between remaining vars
-        target_col = cor_matrix.columns[0]
-        target_cors = cor_matrix[target_col].drop(target_col).sort_values(ascending=False)
-        title2 = f'Correlations with {target_col}'
+plt.tight_layout()
+plt.show()
 
-    colors = ['#e74c3c' if x > 0 else '#3498db' for x in target_cors.values]
-    axes[1].barh(range(len(target_cors)), target_cors.values, color=colors)
-    axes[1].set_yticks(range(len(target_cors)))
-    axes[1].set_yticklabels(target_cors.index)
-    axes[1].set_xlabel('Correlation Coefficient')
-    axes[1].set_title(title2, fontsize=13, fontweight='bold')
-    axes[1].axvline(0, color='black', linewidth=0.5)
-    axes[1].grid(True, alpha=0.3, axis='x')
-
-    plt.tight_layout()
-    plt.show()
-
-    print("\n" + "="*70)
-    print("PEARSON SIGNIFICANCE TESTS (vs NotOnAFB)")
-    print("="*70)
-    if 'NotOnAFB' in df_num_var.columns and df_num_var['NotOnAFB'].std() > 0:
-        for col in [c for c in varying_cols if c != 'NotOnAFB']:
-            r, p = pearsonr(df_num_var[col], df_num_var['NotOnAFB'])
-            print(f"\n{col}: r={r:.4f}, p={p:.4f}, Significant={'YES*' if p<0.05 else 'no'}")
-    else:
-        print("NotOnAFB is constant — Pearson tests not applicable.")
+print("\n" + "="*70)
+print("PEARSON SIGNIFICANCE TESTS (vs IsDormant)")
+print("="*70)
+for col in ['AccountAge', 'IsNonIndividual']:
+    r, p = pearsonr(df_num[col], df_num['IsDormant'])
+    print(f"\n{col}: r={r:.4f}, p={p:.4f}, Significant={'YES*' if p<0.05 else 'no'}")
 ```
 
 :::
@@ -1173,9 +1132,11 @@ else:
 
 ## 8.1 Model Specification
 
-**Outcome:** `NotOnAFB` (1 = not enrolled, 0 = enrolled)
-**Predictors:** `IsNonIndividual`, `AccountAge_scaled`, `IsDormant`
-**Purpose:** Generate an individual-account probability score to rank the onboarding outreach list
+**Outcome:** `IsDormant` (1 = Dormant/Inactive, 0 = Active)
+**Predictors:** `IsNonIndividual`, `AccountAge_scaled`
+**Purpose:** Predict which non-enrolled accounts are likely dormant so Relationship Managers can prioritise Active accounts for immediate AFB outreach and route Dormant accounts to a reactivation campaign first
+
+**Priority logic:** Accounts with a *low* predicted dormancy probability are commercially active and go on the first-wave AFB call list. Accounts with a *high* predicted dormancy probability need reactivation before enrollment is attempted.
 
 ::: {.panel-tabset}
 
@@ -1183,56 +1144,46 @@ else:
 
 ```{r logistic_r}
 df_model <- df %>%
-  filter(!is.na(`Account.Officer`)) %>%
   mutate(
-    NotOnAFB        = ifelse(`On.AFB` == "No", 1, 0),
-    IsNonIndividual = ifelse(ProductCategory == "Non-Individual", 1, 0),
-    IsDormant       = ifelse(`Account.Status` == "Dormant", 1, 0),
+    IsDormant         = ifelse(`Account.Status` != "Active", 1, 0),
+    IsNonIndividual   = ifelse(ProductCategory == "Non-Individual", 1, 0),
     AccountAge_scaled = scale(AccountAge)[,1]
   ) %>%
-  select(NotOnAFB, IsNonIndividual, IsDormant, AccountAge_scaled) %>%
+  select(IsDormant, IsNonIndividual, AccountAge_scaled) %>%
   na.omit()
 
-n_enrolled_r <- sum(df_model$NotOnAFB == 0)
 cat("=== MODEL SAMPLE ===\n")
 cat("Total:", nrow(df_model),
-    "| Not Enrolled:", sum(df_model$NotOnAFB),
-    "| Enrolled:", n_enrolled_r, "\n\n")
+    "| Active (0):", sum(df_model$IsDormant == 0),
+    "| Dormant/Inactive (1):", sum(df_model$IsDormant), "\n\n")
 
-if (n_enrolled_r == 0) {
-  cat("Note: No enrolled accounts in this sample.\n")
-  cat("Logistic regression requires at least two outcome levels.\n")
-  cat("All sampled accounts are unenrolled — the full dataset is the onboarding target list.\n")
-  log_model <- NULL
-} else {
-  log_model <- glm(NotOnAFB ~ IsNonIndividual + IsDormant + AccountAge_scaled,
-                   family=binomial(link="logit"), data=df_model)
+log_model <- glm(IsDormant ~ IsNonIndividual + AccountAge_scaled,
+                 family=binomial(link="logit"), data=df_model)
 
-  cat("=== MODEL SUMMARY ===\n")
-  print(summary(log_model))
+cat("=== MODEL SUMMARY ===\n")
+print(summary(log_model))
 
-  coef_table <- data.frame(
-    Variable    = rownames(coef(summary(log_model))),
-    Coefficient = coef(summary(log_model))[,"Estimate"],
-    StdErr      = coef(summary(log_model))[,"Std. Error"],
-    ZValue      = coef(summary(log_model))[,"z value"],
-    PValue      = coef(summary(log_model))[,"Pr(>|z|)"]
-  ) %>% mutate(
-    OddsRatio    = exp(Coefficient),
-    Significance = ifelse(PValue<0.001,"***",ifelse(PValue<0.01,"**",ifelse(PValue<0.05,"*","")))
-  )
+coef_table <- data.frame(
+  Variable    = rownames(coef(summary(log_model))),
+  Coefficient = coef(summary(log_model))[,"Estimate"],
+  StdErr      = coef(summary(log_model))[,"Std. Error"],
+  ZValue      = coef(summary(log_model))[,"z value"],
+  PValue      = coef(summary(log_model))[,"Pr(>|z|)"]
+) %>% mutate(
+  OddsRatio    = exp(Coefficient),
+  Significance = ifelse(PValue<0.001,"***",ifelse(PValue<0.01,"**",ifelse(PValue<0.05,"*","")))
+)
 
-  cat("\n=== COEFFICIENTS & ODDS RATIOS ===\n")
-  kable(coef_table, digits=4,
-        caption="Logistic Regression: Predictors of AFB Non-Enrollment") %>%
-    kable_styling(bootstrap_options=c("striped","hover"))
+cat("\n=== COEFFICIENTS & ODDS RATIOS ===\n")
+kable(coef_table, digits=4,
+      caption="Logistic Regression: Predictors of Account Dormancy") %>%
+  kable_styling(bootstrap_options=c("striped","hover"))
 
-  cat("\n=== MODEL FIT ===\n")
-  cat("Null Deviance:    ", format(log_model$null.deviance, digits=4), "\n")
-  cat("Residual Deviance:", format(log_model$deviance,      digits=4), "\n")
-  cat("AIC:              ", format(AIC(log_model),          digits=4), "\n")
-  cat("McFadden Pseudo R²:", round(1-log_model$deviance/log_model$null.deviance, 3), "\n")
-}
+cat("\n=== MODEL FIT ===\n")
+cat("Null Deviance:    ", format(log_model$null.deviance, digits=4), "\n")
+cat("Residual Deviance:", format(log_model$deviance,      digits=4), "\n")
+cat("AIC:              ", format(AIC(log_model),          digits=4), "\n")
+cat("McFadden Pseudo R²:", round(1-log_model$deviance/log_model$null.deviance, 3), "\n")
 ```
 
 ## Python Code
@@ -1242,42 +1193,33 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 import statsmodels.api as sm
 
-df_model = df[df['Account Officer'].notna()].copy()
-df_model['NotOnAFB']        = (df_model[afb_col] == 'No').astype(int)
+df_model = df.copy()
+df_model['IsDormant']       = (df_model['Account Status'] != 'Active').astype(int)
 df_model['IsNonIndividual'] = (df_model['ProductCategory'] == 'Non-Individual').astype(int)
-df_model['IsDormant']       = (df_model['Account Status'] == 'Dormant').astype(int)
 
 scaler = StandardScaler()
 df_model['AccountAge_scaled'] = scaler.fit_transform(df_model[['AccountAge']])
 
-feature_cols = ['IsNonIndividual', 'IsDormant', 'AccountAge_scaled']
+feature_cols = ['IsNonIndividual', 'AccountAge_scaled']
 X = df_model[feature_cols].dropna()
-y = df_model.loc[X.index, 'NotOnAFB']
+y = df_model.loc[X.index, 'IsDormant']
 
-# Logistic regression requires variation in the outcome variable
-if y.nunique() < 2:
-    print("Note: Outcome variable (NotOnAFB) has no variation in this sample.")
-    print(f"All {len(y)} records have NotOnAFB = {y.unique()[0]}.")
-    print("This confirms 100% of sampled accounts are not on AFB —")
-    print("the logistic model cannot be estimated, but the onboarding")
-    print("target population is fully identified: every account needs onboarding.")
-    logit_model = None
-    coef_df = None
-else:
-    X_sm = sm.add_constant(X)
-    logit_model = sm.Logit(y, X_sm).fit()
-    print(logit_model.summary())
+print(f"Model sample — Total: {len(y)} | Active (0): {(y==0).sum()} | Dormant/Inactive (1): {(y==1).sum()}\n")
 
-    coef_df = pd.DataFrame({
-        'Variable':    logit_model.params.index,
-        'Coefficient': logit_model.params.values,
-        'StdErr':      logit_model.bse.values,
-        'ZValue':      logit_model.tvalues.values,
-        'PValue':      logit_model.pvalues.values
-    })
-    coef_df['OddsRatio'] = np.exp(coef_df['Coefficient'])
-    print("\nCoefficients & Odds Ratios:")
-    print(coef_df.to_string(index=False))
+X_sm = sm.add_constant(X)
+logit_model = sm.Logit(y, X_sm).fit()
+print(logit_model.summary())
+
+coef_df = pd.DataFrame({
+    'Variable':    logit_model.params.index,
+    'Coefficient': logit_model.params.values,
+    'StdErr':      logit_model.bse.values,
+    'ZValue':      logit_model.tvalues.values,
+    'PValue':      logit_model.pvalues.values
+})
+coef_df['OddsRatio'] = np.exp(coef_df['Coefficient'])
+print("\nCoefficients & Odds Ratios:")
+print(coef_df.to_string(index=False))
 ```
 
 :::
@@ -1293,50 +1235,45 @@ else:
 ```{r logistic_diagnostics_r}
 if (requireNamespace("pROC", quietly = TRUE)) library(pROC)
 
-if (is.null(log_model)) {
-  cat("Model was not fitted (outcome has only one level).\n")
-  cat("All sampled accounts are unenrolled — the full sample is the onboarding target list.\n")
-  cat("Priority tier: every account in this sample is High Priority for AFB onboarding.\n")
-} else {
-  df_model$pred_prob <- predict(log_model, type="response")
+df_model$pred_prob <- predict(log_model, type="response")
 
-  roc_obj <- roc(df_model$NotOnAFB, df_model$pred_prob)
-  cat("=== MODEL PERFORMANCE ===\n")
-  cat("AUC:", round(auc(roc_obj), 3), "\n")
+roc_obj <- roc(df_model$IsDormant, df_model$pred_prob)
+cat("=== MODEL PERFORMANCE ===\n")
+cat("AUC:", round(auc(roc_obj), 3), "\n")
 
-  plot(roc_obj, main=paste("ROC Curve — AFB Non-Enrollment Model (AUC =",
-                            round(auc(roc_obj), 3), ")"),
-       col="#e74c3c", lwd=2)
-  abline(a=0, b=1, lty=2, col="grey")
+plot(roc_obj, main=paste("ROC Curve — Account Dormancy Model (AUC =",
+                          round(auc(roc_obj), 3), ")"),
+     col="#e74c3c", lwd=2)
+abline(a=0, b=1, lty=2, col="grey")
 
-  cat("\n=== ONBOARDING PRIORITY TIERS ===\n")
-  df_model$PriorityTier <- cut(df_model$pred_prob,
-    breaks=c(0, 0.3, 0.7, 1.0),
-    labels=c("Low Priority", "Monitor", "High Priority — Outreach Now"),
-    include.lowest=TRUE)
+cat("\n=== ONBOARDING PRIORITY TIERS ===\n")
+cat("(based on predicted dormancy probability — lower = higher outreach priority)\n\n")
+df_model$PriorityTier <- cut(df_model$pred_prob,
+  breaks=c(0, 0.35, 0.65, 1.0),
+  labels=c("High Priority — Outreach Now", "Monitor / Reactivate First", "Dormancy Campaign"),
+  include.lowest=TRUE)
 
-  tier_summary <- df_model %>%
-    group_by(PriorityTier) %>%
-    summarise(
-      Count          = n(),
-      Pct_of_Sample  = paste0(round(n()/nrow(df_model)*100, 1), "%"),
-      Avg_Risk_Score = round(mean(pred_prob), 3),
-      .groups='drop'
-    )
-  kable(tier_summary,
-        caption="Onboarding Priority Tiers by Predicted Non-Enrollment Probability") %>%
-    kable_styling(bootstrap_options=c("striped","hover"))
+tier_summary <- df_model %>%
+  group_by(PriorityTier) %>%
+  summarise(
+    Count              = n(),
+    Pct_of_Sample      = paste0(round(n()/nrow(df_model)*100, 1), "%"),
+    Avg_Dormancy_Score = round(mean(pred_prob), 3),
+    .groups='drop'
+  )
+kable(tier_summary,
+      caption="Onboarding Priority Tiers by Predicted Dormancy Probability") %>%
+  kable_styling(bootstrap_options=c("striped","hover"))
 
-  cat("\n=== CONFUSION MATRIX (threshold = 0.5) ===\n")
-  pred_class  <- ifelse(df_model$pred_prob >= 0.5, 1, 0)
-  cm          <- table(Actual=df_model$NotOnAFB, Predicted=pred_class)
-  print(cm)
-  if (nrow(cm) > 1) {
-    sensitivity <- cm[2,2] / sum(cm[2,])
-    specificity  <- cm[1,1] / sum(cm[1,])
-    cat(sprintf("\nSensitivity (correctly identifying non-enrolled): %.1f%%\n", sensitivity*100))
-    cat(sprintf("Specificity (correctly identifying enrolled):     %.1f%%\n", specificity*100))
-  }
+cat("\n=== CONFUSION MATRIX (threshold = 0.5) ===\n")
+pred_class <- ifelse(df_model$pred_prob >= 0.5, 1, 0)
+cm         <- table(Actual=df_model$IsDormant, Predicted=pred_class)
+print(cm)
+if (nrow(cm) > 1) {
+  sensitivity <- cm[2,2] / sum(cm[2,])
+  specificity  <- cm[1,1] / sum(cm[1,])
+  cat(sprintf("\nSensitivity (correctly identifying Dormant accounts): %.1f%%\n", sensitivity*100))
+  cat(sprintf("Specificity (correctly identifying Active accounts):  %.1f%%\n", specificity*100))
 }
 ```
 
@@ -1345,48 +1282,43 @@ if (is.null(log_model)) {
 ```{python logistic_diag_py}
 from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, classification_report
 
-if y.nunique() < 2:
-    print("Outcome has no variation — ROC/AUC and priority tiers cannot be computed.")
-    print("All sampled accounts are unenrolled: the entire dataset IS the onboarding list.")
-    print("\nOnboarding action: all", len(y), "accounts in this sample require AFB activation.")
-else:
-    log_sk = LogisticRegression(random_state=42, max_iter=1000)
-    log_sk.fit(X, y)
-    y_prob = log_sk.predict_proba(X)[:, 1]
+log_sk = LogisticRegression(random_state=42, max_iter=1000)
+log_sk.fit(X, y)
+y_prob = log_sk.predict_proba(X)[:, 1]
 
-    auc_score = roc_auc_score(y, y_prob)
-    print(f"AUC: {auc_score:.3f}")
+auc_score = roc_auc_score(y, y_prob)
+print(f"AUC: {auc_score:.3f}")
 
-    fpr, tpr, _ = roc_curve(y, y_prob)
-    plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, color='#e74c3c', lw=2, label=f'ROC curve (AUC = {auc_score:.3f})')
-    plt.plot([0,1],[0,1], 'k--', lw=1)
-    plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve — AFB Non-Enrollment Model', fontsize=13, fontweight='bold')
-    plt.legend(loc='lower right')
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.show()
+fpr, tpr, _ = roc_curve(y, y_prob)
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, color='#e74c3c', lw=2, label=f'ROC curve (AUC = {auc_score:.3f})')
+plt.plot([0,1],[0,1], 'k--', lw=1)
+plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate')
+plt.title('ROC Curve — Account Dormancy Model', fontsize=13, fontweight='bold')
+plt.legend(loc='lower right')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.show()
 
-    print("\n" + "="*70)
-    print("ONBOARDING PRIORITY TIERS")
-    print("="*70)
-    tiers = pd.cut(y_prob, bins=[0, 0.3, 0.7, 1.0],
-                   labels=['Low Priority', 'Monitor', 'High Priority — Outreach Now'],
-                   include_lowest=True)
-    tier_df = pd.DataFrame({'PriorityTier': tiers, 'RiskScore': y_prob})
-    print(tier_df.groupby('PriorityTier', observed=True).agg(
-        Count=('RiskScore','count'),
-        Avg_Risk_Score=('RiskScore','mean')
-    ).round(3))
+print("\n" + "="*70)
+print("ONBOARDING PRIORITY TIERS (lower dormancy score = higher outreach priority)")
+print("="*70)
+tiers = pd.cut(y_prob, bins=[0, 0.35, 0.65, 1.0],
+               labels=['High Priority — Outreach Now', 'Monitor / Reactivate First', 'Dormancy Campaign'],
+               include_lowest=True)
+tier_df = pd.DataFrame({'PriorityTier': tiers, 'DormancyScore': y_prob})
+print(tier_df.groupby('PriorityTier', observed=True).agg(
+    Count=('DormancyScore','count'),
+    Avg_Dormancy_Score=('DormancyScore','mean')
+).round(3))
 
-    print("\n" + "="*70)
-    print("CONFUSION MATRIX (threshold = 0.5)")
-    print("="*70)
-    y_pred = (y_prob >= 0.5).astype(int)
-    cm = confusion_matrix(y, y_pred)
-    print(cm)
-    print(classification_report(y, y_pred, target_names=['Enrolled','Not Enrolled']))
+print("\n" + "="*70)
+print("CONFUSION MATRIX (threshold = 0.5)")
+print("="*70)
+y_pred = (y_prob >= 0.5).astype(int)
+cm = confusion_matrix(y, y_pred)
+print(cm)
+print(classification_report(y, y_pred, target_names=['Active','Dormant/Inactive']))
 ```
 
 :::
@@ -1397,17 +1329,17 @@ else:
 
 ## 9.1 Summary of Findings
 
-The five analytical techniques converge on a single operational conclusion: non-enrollment in ALAT for Business across the Apapa zone is **structured, not random**. The 103 accounts in this sample represent 100% of the identified non-enrolled corporate current account population — meaning the dataset is simultaneously the analytical subject and the outreach target list.
+The five analytical techniques converge on a single operational conclusion: among the 103 non-enrolled accounts in the Apapa zone, **commercial readiness for AFB onboarding is unevenly distributed and statistically predictable**. The key discriminating variable is `Account Status` — 60 accounts are Active (immediately reachable and transacting) while 42 are Dormant or Inactive (requiring reactivation before enrollment is meaningful).
 
-Profiling this population reveals that non-enrollment clusters by product type (non-individual accounts show disproportionately low digital adoption), by account officer (some officers have managed portfolios with zero AFB conversions), and is largely independent of account vintage (the gap is not a legacy-account phenomenon that will self-resolve over time).
+This split allows the analysis to move beyond a uniform "all 103 need onboarding" message and instead generate a **sequenced engagement plan** grounded in data: active accounts first, dormancy reactivation in parallel, with the logistic model providing individual-level probability scores to rank each RM's call list.
 
 | Technique | Key Finding | Business Implication |
 |---|---|---|
-| **EDA** | Non-enrollment is concentrated in identifiable product and officer segments, not uniformly distributed | Targeted outreach is more efficient than a zone-wide campaign |
-| **Visualisation** | Officer-level conversion rate charts reveal clear accountability gaps relative to the zone average | Lowest-performing officers are primary coaching targets |
-| **Hypothesis Testing** | Product type association with non-enrollment tested for statistical significance | Segment-specific outreach is justified only if the gap is statistically confirmed |
-| **Correlation** | Non-individual product type shows the strongest correlation with non-enrollment; account age shows weak or no association | Do not filter by vintage — product type is the correct segmentation variable |
-| **Logistic Regression** | Individual risk scores enable a ranked onboarding list, not just segment-level targeting | RMs receive a prioritised call list ordered by non-enrollment probability |
+| **EDA** | 60 accounts (58.3%) are Active; 42 (40.8%) are Dormant or Inactive — a meaningful split for prioritising outreach | Active accounts go on the immediate AFB call list; dormant accounts need reactivation first |
+| **Visualisation** | Account status varies by product type and officer portfolio — dormancy is not randomly distributed | Officer-level active-rate charts identify which RMs manage the highest-risk dormant portfolios |
+| **Hypothesis Testing** | Chi-squared tests whether dormancy rate differs by product type; t-test whether account age differs between Active and Dormant groups | Statistically significant results justify segment-specific sequencing of outreach waves |
+| **Correlation** | Product type (Non-Individual) and account age show measurable correlation with dormancy status | Non-individual accounts and older accounts may need a different onboarding approach than standard corporate current accounts |
+| **Logistic Regression** | Predicted dormancy probability scores each account — low score = active, high score = dormant | RMs receive a tiered call list: "Outreach Now" vs "Reactivate First" vs "Dormancy Campaign" |
 
 ## 9.2 Integrated Interpretation
 
@@ -1419,18 +1351,18 @@ The logistic regression framework, while statistically inapplicable on this samp
 
 **Immediate actions (0–30 days):**
 
-1. Export the High Priority tier (predicted non-enrollment ≥ 0.70) as the first-wave outreach list and assign to the most experienced RMs in each branch.
-2. Brief all account officers on their individual AFB enrollment rates relative to the zone average — use the officer-level charts from Section 5.3 as the briefing document.
-3. Assign a product specialist to non-individual accounts, which show disproportionately low enrollment rates.
+1. Export the **"High Priority — Outreach Now"** tier (low predicted dormancy score) as the first-wave AFB call list and assign to the most experienced RMs in each branch.
+2. Brief all account officers on their individual active-account rates relative to the zone average — use the officer-level status charts from Section 5.3 as the briefing document.
+3. Launch a **parallel reactivation campaign** for the "Dormancy Campaign" tier: contact customers to resolve the underlying reason for dormancy (missing signatory, inactive mandate, outstanding documentation) before attempting AFB enrollment.
 
 **Medium-term governance (30–90 days):**
 
-4. Set quarterly AFB enrollment targets by officer; track progress in the monthly zone performance review.
-5. Re-run the logistic regression on the full 780-account universe to generate zone-wide risk scores, not just the 103-account sample.
-6. Capture a "reason for non-enrollment" field in CRM post-engagement to build a richer onboarding conversion model in the next analysis cycle.
+4. Set quarterly AFB enrollment targets by officer; track progress against the tiered priority list in the monthly zone performance review.
+5. Re-run the dormancy logistic model on the full zone portfolio once reactivation outcomes are recorded, updating the priority scores as accounts move from Dormant to Active.
+6. Capture a "reason for dormancy/non-enrollment" CRM field post-engagement to build a richer conversion model in the next cycle.
 
 **Revenue case:**
-A conservative 50% conversion of the High Priority tier restores transaction fee income and digital float revenue across those accounts. ALAT for Business also activates cross-sell triggers (payroll, FX, trade finance) that generate secondary income per account.
+A conservative 60% conversion of the "High Priority — Outreach Now" tier (Active accounts) directly unlocks transaction fee income and digital float. Successfully reactivating and then onboarding even 40% of the Dormant tier doubles the addressable revenue opportunity. ALAT for Business also activates cross-sell triggers (payroll, FX, trade finance) that generate secondary income per account.
 
 ---
 
